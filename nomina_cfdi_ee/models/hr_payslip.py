@@ -54,6 +54,9 @@ class HrPayslipWorkedDays(models.Model):
     _inherit = 'hr.payslip.worked_days'
     work_entry_type_id = fields.Text(string='work_entry_type_id')
     
+    contract_id = fields.Many2one('hr.contract', string='Contract', required=True, readonly = True,
+        help="The contract for which applied this input")
+    
     @api.onchange('number_of_days')
     def _onchange_number_of_days(self):
         if self.work_entry_type_id and self.work_entry_type_id.code =='WORK100' and self.payslip_id.contract_id:
@@ -541,6 +544,7 @@ class HrPayslip(models.Model):
     def _get_dias_periodo(self):
         self.dias_periodo = 0
         if self.date_to and self.date_from and self.contract_id.periodicidad_pago == '04':
+            
             line = self.contract_id.env['tablas.periodo.mensual'].search([('form_id','=',self.contract_id.tablas_cfdi_id.id),('dia_fin','>=',self.date_to),
                                                                     ('dia_inicio','<=',self.date_to)],limit=1)
             if line:
@@ -1171,6 +1175,121 @@ class HrPayslip(models.Model):
         #limite_inferior = limite_inferior/2
         #resta = round(sueldo - limite_inferior, 6) #base
         #_logger.info("-> Excedente limite inferior: " + str(resta))
+        
+        
+        _logger.info("-> % Sobre excedente: " + str(excedente))
+        
+        
+        excedenteSobreLimiteInferior = sueldo - limite_inferior
+        _logger.info("-> excedente Sobre Limite Inferior (sueldo-inferior): " + str(excedenteSobreLimiteInferior))
+        
+        multiplica = round(excedenteSobreLimiteInferior * (excedente/100), 6)
+        _logger.info("-> ISR Marginal: " + str(multiplica))
+        
+        suma = round(multiplica + (cuota_fija), 6)
+        _logger.info("-> Cuota fija: " + str((cuota_fija)))
+        
+        
+        #_logger.info("suma: " + str(suma))
+        #resultado = (suma / payslip.dias_pagar) * dias_base
+        #resta = multiplica #sueldo - multiplica
+        resultado =  suma
+        
+        if divisor == 1:
+            resultado = resultado / 2
+            _logger.info("resultado / 2")
+
+        _logger.info("-> ISR: " + str(resultado))
+        _logger.info("--------------------------------------------------------------")
+
+        return resultado
+    
+    
+    
+    
+    
+    #Metodo funcional para ejemplos del primer excel
+    @api.model
+    def calculo_isrVadsaRESPALDO(self, contract, worked_days, payslip, categories):
+        _logger.info("calculando isrVadsa asimilado..." + str(contract.periodicidad_pago))
+        
+        self.env.cr.execute("Select itl_tipo_tabla_isr from hr_payroll_structure where name = 'Asimilados'")
+        tipoTabla = str(self.env.cr.fetchall())
+        _logger.info("query_test: (" + str(tipoTabla)+")")
+        first_char = tipoTabla[5]
+        _logger.info("char1:: (" + str(first_char)+")")
+        
+        divisor = -1
+        if first_char == "1":
+            divisor = 2
+            
+        if first_char == "2":
+            divisor = 1   
+        _logger.info("divisor: " + str(divisor))
+        
+        #sueldo = contract.sueldo_diario * worked_days.WORK100.number_of_days
+        dias_base = 1
+        #tabla_isr = self.env['tablas.cfdi'].browse(contract.tablas_cfdi_id.id)
+        if contract.periodicidad_pago == '04':
+            dias_base = 15
+            tabla_isr = contract.tablas_cfdi_id.tabla_isr_quincenal
+        if contract.periodicidad_pago == '05':
+            dias_base = 30
+            tabla_isr = contract.tablas_cfdi_id.tabla_LISR
+
+        dias_base = 30/divisor
+        _logger.info("dias_base: " + str(dias_base))
+        
+        
+        tabla_isr = contract.tablas_cfdi_id.tabla_isr_quincenal
+        if divisor == 1:
+            tabla_isr = contract.tablas_cfdi_id.tabla_LISR
+        _logger.info("tabla_isr: " + str(tabla_isr))
+ 
+            
+        _logger.info("*****> tabla_isr: " + str(tabla_isr))
+        _logger.info("*****> contract.periodicidad_pago: " + str(contract.periodicidad_pago))
+        #base_mensual_gravada = categories.ALW / dias_base
+        #base_mensual_gravada = base_mensual_gravada * payslip.dias_pagar
+        _logger.info("*****> categories.ALW: " + str(categories.ALW))
+        sueldo = categories.ALW
+        
+        if divisor == 1:
+            sueldo = sueldo * 2
+        
+        _logger.info("sueldo: " + str(sueldo))
+        
+        
+        _logger.info("#################### Calculo de ISR ##################")
+        _logger.info("-> Percepciones: " + str(sueldo))
+        #if contract.periodicidad_pago == '05':
+        #if contract.periodicidad_pago == '04':
+            #tabla_isr_mensual = self.env['tablas.cfdi'].browse(contract.tablas_cfdi_id.id).tabla_isr_quincenal
+        #_logger.info("tabla_isr_mensual: " + str(tabla_isr))
+        limite_inferior = 0
+        cuota_fija = 0
+        excedente = 0
+
+        lim_int_ant = 0
+        cuota_fija_ant = 0
+        excedente_ant = 0
+        index = 0
+        for record in tabla_isr:
+            if record.lim_inf > sueldo:
+                limite_inferior = lim_int_ant
+                cuota_fija = cuota_fija_ant
+                excedente = excedente_ant
+                break
+            index += 1
+            lim_int_ant = record.lim_inf
+            cuota_fija_ant = record.c_fija
+            excedente_ant = record.s_excedente
+        
+        _logger.info("-> Limite inferior: " + str((limite_inferior))) #_logger.info("-> Limite inferior: " + str((limite_inferior/2)))
+        #sueldo = sueldo/2
+        #limite_inferior = limite_inferior/2
+        #resta = round(sueldo - limite_inferior, 6) #base
+        #_logger.info("-> Excedente limite inferior: " + str(resta))
         _logger.info("-> % Sobre excedente: " + str(excedente))
         multiplica = round(sueldo * (excedente/100), 6)
         _logger.info("-> ISR Marginal: " + str(multiplica))
@@ -1188,6 +1307,14 @@ class HrPayslip(models.Model):
         _logger.info("--------------------------------------------------------------")
 
         return resultado
+    
+    
+    
+    
+    
+    
+    
+    
      
     @api.model
     def calculo_isrVadsaSub(self, contract, worked_days, payslip, categories):
