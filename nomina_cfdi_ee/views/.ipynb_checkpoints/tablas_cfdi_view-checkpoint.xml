@@ -55,6 +55,18 @@
                                     <field name="s_quincenal"/>
                                 </tree>
                             </field>
+                          <!-- 
+                           <field name="tabla_factores" string="Factores por prestaciones VADSA">
+                                <tree editable="bottom">
+                                    <field name="factores_anos"/>
+                                    <field name="factores_aguinaldo"/>
+                                    <field name="factores_DiasVacLey"/>
+                                    <field name="factores_DiasAdiVac"/>
+                                    <field name="factores_PrimaVac100"/>
+                                    <field name="factores_Factor"/>
+                                </tree>
+                            </field>
+-->
                          <!--   <field name="tabla_subsidio" string="Subsidio Mensual Art. 114 LISR"> 
                                 <tree editable="bottom">
                                     <field name="lim_inf"/>

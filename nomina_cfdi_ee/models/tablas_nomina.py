@@ -31,6 +31,18 @@ class TablasISRquincenal(models.Model):
     s_excedente = fields.Float('Sobre excedente (%)')
 
     
+    #Tabla para factores en calculo
+class TablasFactoreslLine(models.Model):
+    _name = 'tablas.factores.line'
+
+    form_id = fields.Many2one('tablas.cfdi', string='Factores por prestaciones de Vadsa', required=True)
+    factores_anos = fields.Float('Años') 
+    factores_aguinaldo = fields.Float('Aguinaldo') 
+    factores_DiasVacLey = fields.Float('Dias Vacaciones Ley') 
+    factores_DiasAdiVac = fields.Float('Dias Adicionales Vacacionales') 
+    factores_PrimaVac100 = fields.Float('Prima Vacacional 100%') 
+    factores_Factor = fields.Float('Factor', digits = (12,4)) 
+    
     #Tabla para subquincenal fg
 class TablasSubsidioQlLine(models.Model):
     _name = 'tablas.subsidioq.line'
@@ -150,6 +162,9 @@ class TablasCFDI(models.Model):
     
     #Nueva tabla para el subsidio quincenal
     tabla_subeq = fields.One2many('tablas.subsidioq.line', 'form_id')
+    
+     #Nueva tabla para el factor en el calculo integrado
+    tabla_factores = fields.One2many('tablas.factores.line', 'form_id')
 
     uma = fields.Float(string=_('UMA'), default='84.49')
     salario_minimo = fields.Float(string=_('Salario mínimo'))

@@ -29,6 +29,8 @@ from odoo.addons.l10n_mx_edi.tools.run_after_commit import run_after_commit
 
 from suds.client import Client
 
+import dateutil
+
 CFDI_TEMPLATE_NOMINA12 = 'nomina_cfdi_ee.nomina12'
 CFDI_XSLT_CADENA_TFD = 'l10n_mx_edi/data/xslt/3.3/cadenaoriginal_TFD_1_1.xslt'
 CFDI_XSLT_CADENA = 'l10n_mx_edi/data/%s/cadenaoriginal.xslt'
@@ -966,19 +968,39 @@ class HrPayslip(models.Model):
         sueldo = categories.ALW * 2
         _logger.info("Sueldo mensual: " + str(sueldo))
         
-        diasBase = 30.4
+        diasBase = 30.41666667#30.4165645633381#30.42
         
         sueldoDiario = sueldo / diasBase
-        _logger.info("Sueldo diario: " + str(sueldoDiario))
+        _logger.info("Sueldo diario: " + str(round(sueldoDiario,2)))
         
         operacionExtra = ((15+1.5)/365)+1 
         _logger.info("operacionExtra: " + str(operacionExtra))
+        
+        tabla_anti = contract.tablas_cfdi_id.tabla_antiguedades
+        _logger.info("tabla_anti: "+str(tabla_anti))
+        years_anti = 0
+        for record in tabla_anti:
+            _logger.info("entro: ")
+            years_anti = record.antiguedad
+            _logger.info("aguinaldo: "+str(record.aguinaldo))
+            _logger.info("prima vac. "+str(record.prima_vac))
+            suma3 = record.aguinaldo + 2 + record.prima_vac
+            _logger.info(suma3)
+            operacionExtra = ((suma3)/365)+1
+        
+        _logger.info("years_anti: "+str(years_anti))
+        _logger.info("operacionExtra: " + str(operacionExtra))
+        
+        
+        
         
         salarioBaseCotizacion = operacionExtra * sueldoDiario
         _logger.info("salarioBaseCotizacion: " + str(salarioBaseCotizacion))
         
         salarioBaseCotizacion2 = salarioBaseCotizacion * diasBase
         _logger.info("salarioBaseCotizacion2: " + str(salarioBaseCotizacion2))
+        
+        
         
         #
         
@@ -1002,10 +1024,7 @@ class HrPayslip(models.Model):
         #enf_mat_excedente_e = round(contract.tablas_cfdi_id.enf_mat_excedente_e, 3)
         #_logger.info("Excedente: " + str(enf_mat_excedente_e))
         
-        excedente = 0
-        if (uma3 < salarioBaseCotizacion):
-            excedente = salarioBaseCotizacion - uma3
-        _logger.info("excedente: " + str(excedente))
+        
         
         totalRetencion =inv_vida_esp_y_dinero + ceav + enf_mat_en_dinero +  enf_mat_gastos_med_e #2.375
         _logger.info("totalRetencion %: " + str(totalRetencion))
@@ -1018,6 +1037,19 @@ class HrPayslip(models.Model):
         
         retInicIMSS = (salarioBaseCotizacion2/100)*totalRetencion
         _logger.info("retInicIMSS: " + str(retInicIMSS))
+        
+        excedente = 0
+        if (uma3 < salarioBaseCotizacion):
+            excedente = salarioBaseCotizacion - uma3
+            _logger.info("excedente: " + str(excedente))
+            salarioBaseCotizacionExcedente = diasBase * excedente
+            _logger.info("salarioBaseCotizacionExcedente: " + str(salarioBaseCotizacionExcedente))
+            IMSSSobreExcedente = (salarioBaseCotizacionExcedente / 100) * 0.40
+            _logger.info("IMSSSobreExcedente: " + str(IMSSSobreExcedente))
+            _logger.info("retInicIMSS: " + str(retInicIMSS))
+            retInicIMSS = retInicIMSS + IMSSSobreExcedente
+            _logger.info("retInicIMSS: " + str(retInicIMSS))
+        
         
         total_imss = retInicIMSS / 2
         _logger.info("total_imss: " + str(total_imss))
