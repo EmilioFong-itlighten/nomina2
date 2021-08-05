@@ -56,17 +56,22 @@ class HrPayslipWorkedDays(models.Model):
     _inherit = 'hr.payslip.worked_days'
     work_entry_type_id = fields.Text(string='work_entry_type_id')
     
-    contract_id = fields.Many2one('hr.contract', string='Contract', required=True, readonly = True,
+    contract_id = fields.Many2one('hr.contract', string='Contract', required=True,
         help="The contract for which applied this input")
     
     @api.onchange('number_of_days')
     def _onchange_number_of_days(self):
+        _logger.info("actualizo numero de dias")
+        #_logger.info("self.work_entry_type_id: "+str(self.work_entry_type_id))
+        #_logger.info("self.work_entry_type_id.code: "+str(self.work_entry_type_id.code))
+        #_logger.info("self.payslip_id.contract_id: "+str(self.payslip_id.contract_id))
         if self.work_entry_type_id and self.work_entry_type_id.code =='WORK100' and self.payslip_id.contract_id:
             self.number_of_hours = self.number_of_days * 8
             self.amount = self.number_of_days * self.payslip_id.contract_id.sueldo_diario
+            _logger.info(str(self.number_of_hours))
             
     
-
+    
 class HrSalaryRule(models.Model):
     #_inherit = ['hr.salary.rule','mail.thread']
     _inherit = 'hr.salary.rule'
@@ -550,7 +555,7 @@ class HrPayslip(models.Model):
             line = self.contract_id.env['tablas.periodo.mensual'].search([('form_id','=',self.contract_id.tablas_cfdi_id.id),('dia_fin','>=',self.date_to),
                                                                     ('dia_inicio','<=',self.date_to)],limit=1)
             if line:
-                self.dias_periodo = line.no_dias/2
+                self.dias_periodo = line.no_dias#/2
             else:
                 raise UserError(_('No están configurados correctamente los periodos mensuales en las tablas CFDI'))
 
@@ -961,6 +966,7 @@ class HrPayslip(models.Model):
         #cuota del IMSS parte del Empleado
         #salario_cotizado = contract.sueldo_base_cotizacion * 15
         _logger.info("#################### Calculo de IMSS ##################")
+        
         uma1 = round(contract.tablas_cfdi_id.uma, 2)
         uma3 =  round(contract.tablas_cfdi_id.uma * 3, 2)
         _logger.info("uma3: " + str(uma3))
@@ -968,7 +974,8 @@ class HrPayslip(models.Model):
         sueldo = categories.ALW * 2
         _logger.info("Sueldo mensual: " + str(sueldo))
         
-        diasBase = 30.41666667#30.4165645633381#30.42
+        diasBase = contract.tablas_cfdi_id.imss_mes   #30.41666667#30.4165645633381#30.42
+        _logger.info("dias Base: " + str(diasBase))
         
         sueldoDiario = sueldo / diasBase
         _logger.info("Sueldo diario: " + str(round(sueldoDiario,2)))
@@ -986,7 +993,9 @@ class HrPayslip(models.Model):
             _logger.info("prima vac. "+str(record.prima_vac))
             suma3 = record.aguinaldo + 2 + record.prima_vac
             _logger.info(suma3)
-            operacionExtra = ((suma3)/365)+1
+            _logger.info(contract.cia)
+            if contract.cia == '02':
+                operacionExtra = ((suma3)/365)+1
         
         _logger.info("years_anti: "+str(years_anti))
         _logger.info("operacionExtra: " + str(operacionExtra))
@@ -1518,6 +1527,7 @@ class HrPayslip(models.Model):
         
         if self.employee_id.regimen == '02':
             subsidio_empleo = self.line_ids.filtered(lambda line: line.category_id.code == 'DED_OTRO' and line.salary_rule_id.tipo_otro_pago == '002')
+            _logger.info("vsubsidio_empleo: "+str(subsidio_empleo))
             if len(subsidio_empleo) == 0:
                 raise ValidationError('El tipo de régimen configurado en el empleado es "' + str(dict(self.employee_id._fields['regimen'].selection).get(self.employee_id.regimen)) + '" por lo que debe de agregar una regla que indique el Subsidio para el empleo con clave 002.')
         

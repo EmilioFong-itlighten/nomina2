@@ -12,6 +12,7 @@
             <page name="info_cdfi" string="CFDI 3.3">
               <group cols="4"  string="Configuración">
                  <group>
+                    <field name="cia"/>
                     <field name="periodicidad_pago" />
                     <field name="riesgo_puesto" />
                     <field name="tablas_cfdi_id" />
@@ -79,4 +80,5 @@
           </xpath>
         </field>
     </record>
+
 </odoo>

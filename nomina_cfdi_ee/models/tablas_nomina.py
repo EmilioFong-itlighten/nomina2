@@ -168,7 +168,7 @@ class TablasCFDI(models.Model):
 
     uma = fields.Float(string=_('UMA'), default='84.49')
     salario_minimo = fields.Float(string=_('Salario mínimo'))
-    imss_mes = fields.Float('Periodo Mensual para IMSS (dias)',default='30.4')
+    imss_mes = fields.Float('Periodo Mensual para IMSS (dias)',default='30.4', digits = (12,12))
 	
     ex_vale_despensa= fields.Float(string=_('Vale de despena'), compute='_compute_ex_vale_despensa')
     ex_prima_vacacional = fields.Float(string=_('Prima vacacional'), compute='_compute_ex_prima_vacacional')

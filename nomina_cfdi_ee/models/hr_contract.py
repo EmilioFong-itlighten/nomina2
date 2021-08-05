@@ -23,6 +23,12 @@ class Contract(models.Model):
         string=_('Periodicidad de pago CFDI'),
     )
 
+    cia = fields.Selection(
+        selection=[('01', 'Exis'), 
+                   ('02', 'Vadsa'),],
+        string=_('Tipo de CIA'),default = '02'
+    )
+    
     riesgo_puesto = fields.Selection(
         selection=[('1', 'Clase I'), 
                    ('2', 'Clase II'), 
