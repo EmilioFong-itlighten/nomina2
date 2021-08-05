@@ -211,11 +211,24 @@ class HrPayslip(models.Model):
     def onchange_employee(self):
         rec = super(HrPayslip, self).onchange_employee()
         
+        
+        if self.contract_id:
+            
+            for wd in self.worked_days_line_ids:
+                work_data = self.date_to - self.date_from + timedelta(days = 1)
+                wd.number_of_days = work_data.days
+                wd.number_of_hours = int(work_data.days) * 8
+        
+        
         if self.employee_id:
             _logger.info("## if 1")
             self.input_line_ids.unlink()
             regimen = self.employee_id.regimen
             _logger.info("## self.employee_id.regimen: " + str(self.employee_id.regimen))
+            
+            self.number_of_days = self.date_to - self.date_from
+            _logger.info("self.number_of_days: " + str(self.number_of_days))
+            
             if regimen == '02':
                 _logger.info("## if 2")
                 vals = {
