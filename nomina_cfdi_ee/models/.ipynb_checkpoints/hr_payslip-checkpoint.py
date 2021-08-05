@@ -59,6 +59,7 @@ class HrPayslipWorkedDays(models.Model):
     contract_id = fields.Many2one('hr.contract', string='Contract', required=True,
         help="The contract for which applied this input")
     
+    
     @api.onchange('number_of_days')
     def _onchange_number_of_days(self):
         _logger.info("actualizo numero de dias")
@@ -194,6 +195,41 @@ class HrPayslip(models.Model):
     _inherit = ['hr.payslip','mail.thread']
 
     currency_id = fields.Many2one(related='contract_id.currency_id')
+    
+    @api.onchange('contract_id')
+    def _onchange_contract_id(self):
+        if self.contract_id:
+            
+            for wd in self.worked_days_line_ids:
+                wd.contract_id = self.contract_id
+                
+            for inp in self.input_line_ids:
+                inp.contract_id = self.contract_id
+
+    # Inherit
+    @api.onchange('employee_id', 'date_from', 'date_to')
+    def onchange_employee(self):
+        rec = super(HrPayslip, self).onchange_employee()
+        
+        if self.employee_id:
+            _logger.info("## if 1")
+            self.input_line_ids.unlink()
+            regimen = self.employee_id.regimen
+            _logger.info("## self.employee_id.regimen: " + str(self.employee_id.regimen))
+            if regimen == '02':
+                _logger.info("## if 2")
+                vals = {
+                    'name': 'Subsidio',
+                    'code': 'ADJ_NETO',
+                    'contract_id': self.contract_id.id
+                }
+                #input = self.env['hr.payslip.input'].create(vals)
+                self.input_line_ids = [(0, 0, vals)]
+                
+                _logger.info("### self.input_line_ids: " + str(self.input_line_ids))
+        
+        return rec
+            
 
     tipo_nomina = fields.Selection(
         selection=[('O', 'Nómina ordinaria'), 
@@ -555,7 +591,7 @@ class HrPayslip(models.Model):
             line = self.contract_id.env['tablas.periodo.mensual'].search([('form_id','=',self.contract_id.tablas_cfdi_id.id),('dia_fin','>=',self.date_to),
                                                                     ('dia_inicio','<=',self.date_to)],limit=1)
             if line:
-                self.dias_periodo = line.no_dias#/2
+                self.dias_periodo = line.no_dias/2
             else:
                 raise UserError(_('No están configurados correctamente los periodos mensuales en las tablas CFDI'))
 
