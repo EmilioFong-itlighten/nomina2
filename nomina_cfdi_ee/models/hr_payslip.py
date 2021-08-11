@@ -1064,7 +1064,7 @@ class HrPayslip(models.Model):
             _logger.info("prima vac. "+str(record.prima_vac))
             suma3 = record.aguinaldo + diasAdiVac + record.prima_vac
             _logger.info(suma3)
-            _logger.info(contract.cia)
+           #_logger.info(contract.cia)
             operacionExtra = ((suma3)/365)+1
         
         _logger.info("years_anti: "+str(years_anti))
