@@ -1015,13 +1015,35 @@ class HrPayslip(models.Model):
         #cuota del IMSS parte del Empleado
         #salario_cotizado = contract.sueldo_base_cotizacion * 15
         _logger.info("#################### Calculo de IMSS ##################")
+        _logger.info("--> contract.tablas_cfdi_id.name: " + str(contract.tablas_cfdi_id.name))
         
+        
+        
+        
+        tabla =  "hola"
+        _logger.info("tabla: " + str(tabla))
+        tabla = "es la tabla " + contract.tablas_cfdi_id.name
+        _logger.info("tabla: " + str(tabla))
+        
+        diasAdiVac = 2
+        
+        
+        if tabla.find("VADSA") == -1:
+            _logger.info("No 'is' here!")
+            diasAdiVac =  0 
+        else:
+            _logger.info("Found 'is' in the string.")
+        
+        #if "VADSA" not in tabla:
+            #diasAdiVac =  0 
+            
+        _logger.info("--> diasAdiVac: " + str(diasAdiVac))
         uma1 = round(contract.tablas_cfdi_id.uma, 2)
         uma3 =  round(contract.tablas_cfdi_id.uma * 3, 2)
         _logger.info("uma3: " + str(uma3))
         
         sueldo = categories.ALW * 2
-        _logger.info("Sueldo mensual: " + str(sueldo))
+        _logger.info("Sueldo mensual: " + str(sueldo)) 
         
         diasBase = contract.tablas_cfdi_id.imss_mes   #30.41666667#30.4165645633381#30.42
         _logger.info("dias Base: " + str(diasBase))
@@ -1040,11 +1062,10 @@ class HrPayslip(models.Model):
             years_anti = record.antiguedad
             _logger.info("aguinaldo: "+str(record.aguinaldo))
             _logger.info("prima vac. "+str(record.prima_vac))
-            suma3 = record.aguinaldo + 2 + record.prima_vac
+            suma3 = record.aguinaldo + diasAdiVac + record.prima_vac
             _logger.info(suma3)
             _logger.info(contract.cia)
-            if contract.cia == '02':
-                operacionExtra = ((suma3)/365)+1
+            operacionExtra = ((suma3)/365)+1
         
         _logger.info("years_anti: "+str(years_anti))
         _logger.info("operacionExtra: " + str(operacionExtra))
